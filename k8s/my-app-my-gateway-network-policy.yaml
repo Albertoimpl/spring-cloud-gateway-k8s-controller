@@ -1,0 +1,14 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: network-policy-my-gateway-service-instance-id
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      service-instance-id: my-gateway-service-instance-id
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              binds-to: my-gateway

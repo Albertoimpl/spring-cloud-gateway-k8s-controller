@@ -1,0 +1,36 @@
+spring:
+  cloud:
+    openservicebroker:
+      catalog:
+        services:
+          - id: ec457964-6cd7-47a1-859f-f652ca7d315f
+            name: gateway-service
+            description: gateway-service-description
+            bindable: true
+            metadata:
+              shareable: true
+            tags:
+              - gateway
+              - spring-cloud
+            plans:
+              - id: 92528b61-e748-4a59-9091-23e16570443f
+                name: gateway-plan
+                bindable: true
+                description: A standard plan
+                free: true
+    appbroker:
+      deployer:
+        kubernetes:
+          master-url: https://127.0.0.1:32768
+      services:
+        - service-name: gateway-service
+          plan-name: gateway-plan
+          apps:
+            - name: gateway-app
+              path: albertoimpl/vanilla-oss-gateway
+
+logging:
+  level:
+    org.springframework.cloud.appbroker: DEBUG
+
+    io: INFO
