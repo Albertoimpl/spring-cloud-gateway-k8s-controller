@@ -1,0 +1,10 @@
+apiVersion: "tanzu.vmware.com/v1"
+kind: SpringCloudGateway
+metadata:
+  name: my-gateway-with-crd
+spec:
+  routes:
+    id: path_route
+    uri: https://example.org
+    predicates:
+      - Path=/hello
