@@ -20,10 +20,12 @@ ext {
 
 dependencies {
     implementation('org.springframework.boot:spring-boot-starter')
+    //SpringCloudGatewayControlPlaneWithKubernetesClient
     implementation("org.springframework.cloud:spring-cloud-app-broker-deployer-kubernetes:${springCloudAppBrokerVersion}")
+    // SpringCloudGatewayControlPlaneWithAppBroker
     implementation("org.springframework.cloud:spring-cloud-app-broker-core:${springCloudAppBrokerVersion}")
-//        exclude group: 'org.springframework.credhub', module: 'spring-credhub-starter'
-//        exclude group: 'org.springframework.cloud', module: 'spring-cloud-starter-open-service-broker'
+    // SpringCloudGatewayControlPlaneWithReconciler
+    implementation 'io.kubernetes:client-java-extended:8.0.0'
 
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'

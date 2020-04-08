@@ -6,10 +6,12 @@ spec:
   selector:
     matchLabels:
       app: vanilla-oss-gateway
+      service-instance-id: quack
   template:
     metadata:
       labels:
         app: vanilla-oss-gateway
+        service-instance-id: quack
     spec:
       containers:
         - name: vanilla-oss-gateway
