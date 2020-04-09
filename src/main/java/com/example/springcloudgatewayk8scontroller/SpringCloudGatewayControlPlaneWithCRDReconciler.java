@@ -3,7 +3,6 @@ package com.example.springcloudgatewayk8scontroller;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Map;
-import java.util.Objects;
 
 import com.vmware.tanzu.springcloudgateway.SpringCloudGatewayV1Api;
 import com.vmware.tanzu.springcloudgateway.V1SpringCloudGateway;
@@ -23,8 +22,9 @@ import io.kubernetes.client.openapi.ApiCallback;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
-import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.NetworkingV1Api;
+import io.kubernetes.client.openapi.models.V1DeploymentList;
 import io.kubernetes.client.openapi.models.V1NetworkPolicyList;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.KubeConfig;
@@ -41,11 +41,15 @@ public class SpringCloudGatewayControlPlaneWithCRDReconciler {
 
 		private NetworkPolicyService networkPolicyService;
 
+		private DeploymentService deploymentService;
+
 		public SpringCloudGatewayReconciler(
 			SharedIndexInformer<V1SpringCloudGateway> informer,
-			NetworkPolicyService networkPolicyService) {
+			NetworkPolicyService networkPolicyService,
+			DeploymentService deploymentService) {
 			this.lister = new Lister<>(informer.getIndexer());
 			this.networkPolicyService = networkPolicyService;
+			this.deploymentService = deploymentService;
 		}
 
 		@Override
@@ -59,29 +63,39 @@ public class SpringCloudGatewayControlPlaneWithCRDReconciler {
 				String name = request.getName();
 				V1SpringCloudGateway gateway = lister.namespace(namespace).get(name);
 				if (gateway == null) {
-					V1NetworkPolicyList networkingV1ApiList =
-						networkPolicyService.listNetworkPolicies();
 					System.out.println("******* Network policies");
+					V1NetworkPolicyList networkingV1ApiList = networkPolicyService.listNetworkPolicies();
 					System.out.println(networkingV1ApiList.getItems().size());
-
 					if (!networkingV1ApiList.getItems().isEmpty()) {
 						networkPolicyService.deleteNetworkPolicy();
 					}
+
+					System.out.println("******* Deployments");
+					V1DeploymentList deploymentList = deploymentService.listDeployments();
+					System.out.println(deploymentList.getItems().size());
+					if (!deploymentList.getItems().isEmpty()) {
+						deploymentService.deleteDeployment();
+					}
+
 					return new Result(false);
 				}
 				System.out.println("******* Gateway");
 				System.out.println(gateway.getMetadata().getLabels());
 
-//				if (!gateway.getMetadata().getLabels().containsKey("service-instance-id")) {
-//					return new Result(false);
-//				}
-
-				V1NetworkPolicyList networkingV1ApiList = networkPolicyService.listNetworkPolicies();
 				System.out.println("******* Network policies");
+				V1NetworkPolicyList networkingV1ApiList = networkPolicyService.listNetworkPolicies();
 				System.out.println(networkingV1ApiList.getItems().size());
 				if (networkingV1ApiList.getItems().isEmpty()) {
 					networkPolicyService.createNetworkPolicy();
 				}
+
+				System.out.println("******* Deployments");
+				V1DeploymentList deploymentList = deploymentService.listDeployments();
+				System.out.println(deploymentList.getItems().size());
+				if (deploymentList.getItems().isEmpty()) {
+					deploymentService.createDeployment();
+				}
+
 			}
 			catch (ApiException e) {
 				e.printStackTrace();
@@ -94,10 +108,13 @@ public class SpringCloudGatewayControlPlaneWithCRDReconciler {
 
 	public static void main(String[] args) throws IOException {
 		ApiClient client = initializeApiClient();
-		CoreV1Api coreV1Api = new CoreV1Api(client);
 		SpringCloudGatewayV1Api springCloudGatewayApi = new SpringCloudGatewayV1Api(client);
+
 		NetworkingV1Api networkApiClient = new NetworkingV1Api(client);
 		NetworkPolicyService networkPolicyService = new NetworkPolicyService(networkApiClient);
+
+		AppsV1Api appsV1Api = new AppsV1Api(client);
+		DeploymentService deploymentService = new DeploymentService(appsV1Api);
 
 		SharedInformerFactory factory = new SharedInformerFactory();
 		ControllerManagerBuilder managerBuilder = ControllerBuilder.controllerManagerBuilder(factory);
@@ -119,7 +136,7 @@ public class SpringCloudGatewayControlPlaneWithCRDReconciler {
 
 		Controller controller = ControllerBuilder.defaultBuilder(factory).watch(
 			(workQueue) -> createControllerWatch(workQueue))
-			.withReconciler(new SpringCloudGatewayReconciler(informer, networkPolicyService))
+			.withReconciler(new SpringCloudGatewayReconciler(informer, networkPolicyService, deploymentService))
 			.withName(CONTROLLER_NAME)
 			.withWorkerCount(WORKER_COUNT)
 			.build();

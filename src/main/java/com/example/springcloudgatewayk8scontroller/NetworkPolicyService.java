@@ -77,7 +77,6 @@ class NetworkPolicyService {
 			null,
 			null);
 		System.out.println("Created network policy");
-		System.out.println(networkPolicy1);
 	}
 
 	void deleteNetworkPolicy() throws ApiException {
@@ -93,7 +92,6 @@ class NetworkPolicyService {
 			null
 		);
 		System.out.println("Deleted network policy");
-		System.out.println(status);
 	}
 
 }
